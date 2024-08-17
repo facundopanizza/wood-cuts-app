@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { yupResolver } from '@hookform/resolvers/yup';
+import { Plus, Trash } from 'lucide-react';
 import React, { useRef } from 'react';
 import {
   Resolver,
@@ -21,7 +22,6 @@ import {
   TableRow,
 } from './components/ui/table';
 import { Result, WoodPiece, optimizeCuts } from './utils/woodCutOptimizer';
-import { Plus, Trash } from 'lucide-react';
 
 const woodPieceSchema = yup.object().shape({
   length: yup
@@ -109,6 +109,8 @@ const App: React.FC = () => {
   const desiredCutsRef = useRef<HTMLInputElement[]>([]);
   const availableWoodRef = useRef<HTMLInputElement[]>([]);
 
+  const resultRef = useRef<HTMLDivElement>(null);
+
   const handleKeyPress = async (
     event: React.KeyboardEvent<HTMLInputElement>,
     index: number,
@@ -138,6 +140,11 @@ const App: React.FC = () => {
     );
     console.log(result);
     setResult(result);
+
+    // Scroll to the result table after a short delay
+    setTimeout(() => {
+      resultRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const exportToExcel = () => {
@@ -184,13 +191,16 @@ const App: React.FC = () => {
             <CardTitle>Cortes Deseados</CardTitle>
           </CardHeader>
           <CardContent>
+            <p className="text-sm text-gray-500 mb-2">
+              Nota: La longitud debe ser en milímetros (mm)
+            </p>
             {desiredCutsFields.map((field, index) => (
               <div key={field.id} className="flex flex-col space-y-2 mb-4">
                 <div className="flex space-x-2">
                   <Input
                     {...register(`desiredCuts.${index}.length`)}
                     type="number"
-                    placeholder="Longitud"
+                    placeholder="Longitud (mm)"
                     onKeyDown={(e) => handleKeyPress(e, index, 'desiredCuts')}
                   />
                   <Input
@@ -235,13 +245,16 @@ const App: React.FC = () => {
             <CardTitle>Tablas Disponibles</CardTitle>
           </CardHeader>
           <CardContent>
+            <p className="text-sm text-gray-500 mb-2">
+              Nota: La longitud debe ser en milímetros (mm)
+            </p>
             {availableWoodFields.map((field, index) => (
               <div key={field.id} className="flex flex-col space-y-2 mb-4">
                 <div className="flex space-x-2">
                   <Input
                     {...register(`availableWood.${index}.length`)}
                     type="number"
-                    placeholder="Longitud"
+                    placeholder="Longitud (mm)"
                     onKeyDown={(e) => handleKeyPress(e, index, 'availableWood')}
                   />
                   <Input
@@ -331,7 +344,7 @@ const App: React.FC = () => {
       </form>
 
       {result && (
-        <Card className="mt-8">
+        <Card className="mt-8" ref={resultRef}>
           <CardHeader>
             <CardTitle>Resultados</CardTitle>
           </CardHeader>
