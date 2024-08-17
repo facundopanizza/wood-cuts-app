@@ -61,12 +61,20 @@ export function optimizeCuts(
     let currentLength = woodLength;
     while (currentLength > 0 && cutChoice[currentLength] !== -1) {
       const chosenCutIndex = cutChoice[currentLength];
-      cuts.push(remainingCuts[chosenCutIndex].length);
-      currentLength -= Math.ceil(
-        remainingCuts[chosenCutIndex].length * (1 + errorPercentage) +
-          sawDustWidth
-      );
-      remainingCuts[chosenCutIndex].quantity--;
+
+      // Check if we still need this cut
+      if (remainingCuts[chosenCutIndex].quantity > 0) {
+        cuts.push(remainingCuts[chosenCutIndex].length);
+        currentLength -= Math.ceil(
+          remainingCuts[chosenCutIndex].length * (1 + errorPercentage) +
+            sawDustWidth
+        );
+
+        remainingCuts[chosenCutIndex].quantity--;
+      } else {
+        // If we don't need this cut anymore, stop cutting
+        break;
+      }
     }
 
     return {

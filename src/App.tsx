@@ -141,6 +141,16 @@ const App: React.FC = () => {
     console.log(result);
     setResult(result);
 
+    // New code to count cuts and log the result
+    const cutCounts = result.cuts.reduce((acc, pattern) => {
+      pattern.cuts.forEach((cut) => {
+        acc[cut] = (acc[cut] || 0) + 1;
+      });
+      return acc;
+    }, {} as Record<number, number>);
+
+    console.log('Cut counts:', cutCounts);
+
     // Scroll to the result table after a short delay
     setTimeout(() => {
       resultRef.current?.scrollIntoView({ behavior: 'smooth' });
