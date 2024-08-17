@@ -59,6 +59,10 @@ const App: React.FC = () => {
     formState: { errors },
     watch,
   } = useForm<FormData>({
+    defaultValues: {
+      desiredCuts: [{ length: '' as any, quantity: '' as any }],
+      availableWood: [{ length: '' as any, quantity: '' as any }],
+    },
     resolver: yupResolver(formSchema) as Resolver<FormData>,
   });
 
@@ -194,7 +198,9 @@ const App: React.FC = () => {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => appendDesiredCut({ length: 0, quantity: 0 })}
+              onClick={() =>
+                appendDesiredCut({ length: '' as any, quantity: '' as any })
+              }
               className="mt-2">
               Agregar Corte Deseado
             </Button>
@@ -243,7 +249,9 @@ const App: React.FC = () => {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => appendAvailableWood({ length: 0, quantity: 0 })}
+              onClick={() =>
+                appendAvailableWood({ length: '' as any, quantity: '' as any })
+              }
               className="mt-2">
               Agregar Tabla Disponible
             </Button>
