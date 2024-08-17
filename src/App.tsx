@@ -26,11 +26,13 @@ const woodPieceSchema = yup.object().shape({
   length: yup
     .number()
     .positive('La longitud debe ser un número positivo')
+    .typeError('La longitud debe ser un número')
     .required('La longitud es requerida'),
   quantity: yup
     .number()
     .integer()
     .positive('La cantidad debe ser un número entero positivo')
+    .typeError('La cantidad debe ser un número entero')
     .required('La cantidad es requerida'),
 });
 
