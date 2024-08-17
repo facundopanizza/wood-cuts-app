@@ -39,33 +39,34 @@ export function optimizeCuts(
 
   // Function to solve for a single wood piece
   function solveSingleWood(woodLength: number): CutResult {
-    const cuts: number[] = [];
-    let remainingLength = woodLength;
+    const dp: number[] = new Array(woodLength + 1).fill(0);
+    const cutChoice: number[] = new Array(woodLength + 1).fill(-1);
 
-    while (remainingLength > 0) {
-      let bestCutIndex = -1;
-      let bestCutLength = 0;
-
-      for (let i = 0; i < remainingCuts.length; i++) {
+    for (let i = 1; i <= woodLength; i++) {
+      for (let j = 0; j < remainingCuts.length; j++) {
         const cutLength = Math.ceil(
-          remainingCuts[i].length * (1 + errorPercentage)
+          remainingCuts[j].length * (1 + errorPercentage) + sawDustWidth
         );
-        if (
-          cutLength + sawDustWidth <= remainingLength &&
-          remainingCuts[i].quantity > 0
-        ) {
-          if (cutLength > bestCutLength) {
-            bestCutIndex = i;
-            bestCutLength = cutLength;
+        if (cutLength <= i && remainingCuts[j].quantity > 0) {
+          const newValue = dp[i - cutLength] + remainingCuts[j].length;
+          if (newValue > dp[i]) {
+            dp[i] = newValue;
+            cutChoice[i] = j;
           }
         }
       }
+    }
 
-      if (bestCutIndex === -1) break;
-
-      cuts.push(remainingCuts[bestCutIndex].length);
-      remainingLength -= bestCutLength + sawDustWidth;
-      remainingCuts[bestCutIndex].quantity--;
+    const cuts: number[] = [];
+    let currentLength = woodLength;
+    while (currentLength > 0 && cutChoice[currentLength] !== -1) {
+      const chosenCutIndex = cutChoice[currentLength];
+      cuts.push(remainingCuts[chosenCutIndex].length);
+      currentLength -= Math.ceil(
+        remainingCuts[chosenCutIndex].length * (1 + errorPercentage) +
+          sawDustWidth
+      );
+      remainingCuts[chosenCutIndex].quantity--;
     }
 
     return {
