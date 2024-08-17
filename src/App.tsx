@@ -21,6 +21,7 @@ import {
   TableRow,
 } from './components/ui/table';
 import { Result, WoodPiece, optimizeCuts } from './utils/woodCutOptimizer';
+import { Plus, Trash } from 'lucide-react';
 
 const woodPieceSchema = yup.object().shape({
   length: yup
@@ -44,12 +45,25 @@ const formSchema = yup.object().shape({
   availableWood: yup
     .array()
     .of(woodPieceSchema)
-    .min(1, 'Se requiere al menos una pieza de table disponible'),
+    .min(1, 'Se requiere al menos una pieza de tabla disponible'),
+  sawWidth: yup
+    .number()
+    .positive('El ancho de la sierra debe ser un número positivo')
+    .typeError('El ancho de la sierra debe ser un número')
+    .required('El ancho de la sierra es requerido'),
+  errorPercentage: yup
+    .number()
+    .min(0, 'El porcentaje de error humano debe ser mayor o igual a 0')
+    .max(100, 'El porcentaje de error humano debe ser menor o igual a 100')
+    .typeError('El porcentaje de error humano debe ser un número')
+    .required('El porcentaje de error humano es requerido'),
 });
 
 type FormData = {
   desiredCuts: WoodPiece[];
   availableWood: WoodPiece[];
+  sawWidth: number;
+  errorPercentage: number;
 };
 
 const App: React.FC = () => {
@@ -64,6 +78,8 @@ const App: React.FC = () => {
     defaultValues: {
       desiredCuts: [{ length: '' as any, quantity: '' as any }],
       availableWood: [{ length: '' as any, quantity: '' as any }],
+      sawWidth: 3,
+      errorPercentage: 1,
     },
     resolver: yupResolver(formSchema) as Resolver<FormData>,
   });
@@ -114,7 +130,12 @@ const App: React.FC = () => {
   };
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
-    const result = optimizeCuts(data.desiredCuts, data.availableWood);
+    const result = optimizeCuts(
+      data.desiredCuts,
+      data.availableWood,
+      data.sawWidth,
+      data.errorPercentage / 100
+    );
     console.log(result);
     setResult(result);
   };
@@ -182,7 +203,7 @@ const App: React.FC = () => {
                     type="button"
                     variant="destructive"
                     onClick={() => removeDesiredCut(index)}>
-                    Eliminar
+                    <Trash />
                   </Button>
                 </div>
                 {errors.desiredCuts?.[index]?.length && (
@@ -204,14 +225,14 @@ const App: React.FC = () => {
                 appendDesiredCut({ length: '' as any, quantity: '' as any })
               }
               className="mt-2">
-              Agregar Corte Deseado
+              <Plus />
             </Button>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Tabla Disponible</CardTitle>
+            <CardTitle>Tablas Disponibles</CardTitle>
           </CardHeader>
           <CardContent>
             {availableWoodFields.map((field, index) => (
@@ -233,7 +254,7 @@ const App: React.FC = () => {
                     type="button"
                     variant="destructive"
                     onClick={() => removeAvailableWood(index)}>
-                    Eliminar
+                    <Trash />
                   </Button>
                 </div>
                 {errors.availableWood?.[index]?.length && (
@@ -255,8 +276,54 @@ const App: React.FC = () => {
                 appendAvailableWood({ length: '' as any, quantity: '' as any })
               }
               className="mt-2">
-              Agregar Tabla Disponible
+              <Plus />
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Configuración Adicional</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex space-x-4">
+              <div className="flex-1">
+                <label
+                  htmlFor="sawWidth"
+                  className="block text-sm font-medium text-gray-700 mb-1">
+                  Ancho de la Sierra (mm)
+                </label>
+                <Input
+                  {...register('sawWidth')}
+                  type="number"
+                  step="0.1"
+                  id="sawWidth"
+                />
+                {errors.sawWidth && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.sawWidth.message}
+                  </p>
+                )}
+              </div>
+              <div className="flex-1">
+                <label
+                  htmlFor="errorPercentage"
+                  className="block text-sm font-medium text-gray-700 mb-1">
+                  Porcentaje de Error Humano (%)
+                </label>
+                <Input
+                  {...register('errorPercentage')}
+                  type="number"
+                  step="0.1"
+                  id="errorPercentage"
+                />
+                {errors.errorPercentage && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.errorPercentage.message}
+                  </p>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
