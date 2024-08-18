@@ -221,7 +221,7 @@ const App: React.FC = () => {
               </p>
               {desiredCutsFields.map((field, index) => (
                 <div key={field.id} className="flex flex-col space-y-2 mb-4">
-                  <div className="flex space-x-2">
+                  <div className="md:flex space-x-2">
                     <Input
                       {...register(`desiredCuts.${index}.length`)}
                       type="number"
@@ -275,7 +275,7 @@ const App: React.FC = () => {
               </p>
               {availableWoodFields.map((field, index) => (
                 <div key={field.id} className="flex flex-col space-y-2 mb-4">
-                  <div className="flex space-x-2">
+                  <div className="md:flex space-x-2">
                     <Input
                       {...register(`availableWood.${index}.length`)}
                       type="number"
@@ -332,7 +332,7 @@ const App: React.FC = () => {
             <CardTitle>Configuración Adicional</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex space-x-4">
+            <div className="md:flex space-x-4">
               <div className="flex-1">
                 <label
                   htmlFor="sawWidth"
