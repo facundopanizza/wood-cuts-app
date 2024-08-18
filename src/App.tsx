@@ -48,9 +48,9 @@ const formSchema = yup.object().shape({
     .min(1, 'Se requiere al menos una pieza de tabla disponible'),
   sawWidth: yup
     .number()
-    .positive('El ancho de la sierra debe ser un número positivo')
-    .typeError('El ancho de la sierra debe ser un número')
-    .required('El ancho de la sierra es requerido'),
+    .positive('El espesor de la sierra debe ser un número positivo')
+    .typeError('El espesor de la sierra debe ser un número')
+    .required('El espesor de la sierra es requerido'),
   errorPercentage: yup
     .number()
     .min(0, 'El porcentaje de error humano debe ser mayor o igual a 0')
@@ -337,7 +337,7 @@ const App: React.FC = () => {
                 <label
                   htmlFor="sawWidth"
                   className="block text-sm font-medium text-gray-700 mb-1">
-                  Ancho de la Sierra (mm)
+                  Espesor de la Sierra (mm)
                 </label>
                 <Input
                   {...register('sawWidth')}
