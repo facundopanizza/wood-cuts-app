@@ -211,7 +211,7 @@ const App: React.FC = () => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="lg:flex lg:space-x-4">
-          <Card className="lg:flex-1">
+          <Card className="mb-4 md:mb-0 lg:flex-1">
             <CardHeader>
               <CardTitle>Cortes Deseados</CardTitle>
             </CardHeader>
@@ -221,19 +221,21 @@ const App: React.FC = () => {
               </p>
               {desiredCutsFields.map((field, index) => (
                 <div key={field.id} className="flex flex-col space-y-2 mb-4">
-                  <div className="md:flex space-x-2">
+                  <div className="space-y-3 md:space-y-0 md:flex md:space-x-2">
                     <Input
                       {...register(`desiredCuts.${index}.length`)}
                       type="number"
                       placeholder="Longitud (mm)"
                       onKeyDown={(e) => handleKeyPress(e, index, 'desiredCuts')}
                     />
+
                     <Input
                       {...register(`desiredCuts.${index}.quantity`)}
                       type="number"
                       placeholder="Cantidad"
                       onKeyDown={(e) => handleKeyPress(e, index, 'desiredCuts')}
                     />
+
                     <Button
                       type="button"
                       variant="destructive"
@@ -275,7 +277,7 @@ const App: React.FC = () => {
               </p>
               {availableWoodFields.map((field, index) => (
                 <div key={field.id} className="flex flex-col space-y-2 mb-4">
-                  <div className="md:flex space-x-2">
+                  <div className="space-y-3 md:space-y-0 md:flex md:space-x-2">
                     <Input
                       {...register(`availableWood.${index}.length`)}
                       type="number"
@@ -332,7 +334,7 @@ const App: React.FC = () => {
             <CardTitle>Configuración Adicional</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="md:flex space-x-4">
+            <div className="space-y-3 md:space-y-0 md:flex md:space-x-4">
               <div className="flex-1">
                 <label
                   htmlFor="sawWidth"
@@ -351,6 +353,7 @@ const App: React.FC = () => {
                   </p>
                 )}
               </div>
+
               <div className="flex-1">
                 <label
                   htmlFor="errorPercentage"
