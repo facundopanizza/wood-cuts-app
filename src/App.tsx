@@ -73,7 +73,6 @@ const App: React.FC = () => {
     handleSubmit,
     trigger,
     formState: { errors },
-    watch,
   } = useForm<FormData>({
     defaultValues: {
       desiredCuts: [{ length: '' as any, quantity: '' as any }],
@@ -83,8 +82,6 @@ const App: React.FC = () => {
     },
     resolver: yupResolver(formSchema) as Resolver<FormData>,
   });
-
-  console.log(watch());
 
   const {
     fields: desiredCutsFields,
@@ -138,7 +135,6 @@ const App: React.FC = () => {
       data.sawWidth,
       data.errorPercentage / 100
     );
-    console.log(result);
     setResult(result);
 
     // New code to count cuts and log the result
@@ -164,9 +160,9 @@ const App: React.FC = () => {
 
     // Create a worksheet for the cutting patterns
     const patternsData = [
-      ['Longitud de Tabla', 'Cortes', 'Desperdicio'],
+      ['Longitud de Tabla', 'Cortes', 'Desperdicio', 'Detalle'],
       ...result.cuts.map((pattern) => [
-        pattern.woodUsed,
+        new Intl.NumberFormat('es-AR').format(pattern.woodUsed),
         pattern.cuts
           .reduce((acc, cut) => {
             const existingCut = acc.find((item) => item.length === cut);
@@ -177,11 +173,29 @@ const App: React.FC = () => {
             }
             return acc;
           }, [] as { length: number; quantity: number }[])
-          .map(({ length, quantity }) => `${length} (x${quantity})`)
+          .map(
+            ({ length, quantity }) =>
+              `${new Intl.NumberFormat('es-AR').format(length)} (x${quantity})`
+          )
           .join(', '),
-        pattern.woodUsed - pattern.cuts.reduce((prev, curr) => prev + curr, 0),
+        new Intl.NumberFormat('es-AR').format(pattern.remainingLength),
+        pattern.reusedLength && pattern.reusedLength > 0
+          ? `Reutilizado: ${new Intl.NumberFormat('es-AR').format(
+              pattern.reusedLength
+            )} mm`
+          : pattern.isReused
+          ? `Reutilizado del sobrante de la tabla anterior (Original: ${new Intl.NumberFormat(
+              'es-AR'
+            ).format(pattern.originalLength ?? 0)} mm)`
+          : '',
       ]),
-      ['Total', result.totalLengthUsed, result.totalLengthTrashed],
+      [
+        'Total',
+        new Intl.NumberFormat('es-AR').format(result.totalLengthUsed) + ' mm',
+        new Intl.NumberFormat('es-AR').format(result.totalLengthTrashed) +
+          ' mm',
+        '',
+      ],
     ];
     const patternsWs = XLSX.utils.aoa_to_sheet(patternsData);
     XLSX.utils.book_append_sheet(workbook, patternsWs, 'Patrones de Corte');
@@ -196,113 +210,122 @@ const App: React.FC = () => {
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Cortes Deseados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500 mb-2">
-              Nota: La longitud debe ser en milímetros (mm)
-            </p>
-            {desiredCutsFields.map((field, index) => (
-              <div key={field.id} className="flex flex-col space-y-2 mb-4">
-                <div className="flex space-x-2">
-                  <Input
-                    {...register(`desiredCuts.${index}.length`)}
-                    type="number"
-                    placeholder="Longitud (mm)"
-                    onKeyDown={(e) => handleKeyPress(e, index, 'desiredCuts')}
-                  />
-                  <Input
-                    {...register(`desiredCuts.${index}.quantity`)}
-                    type="number"
-                    placeholder="Cantidad"
-                    onKeyDown={(e) => handleKeyPress(e, index, 'desiredCuts')}
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={() => removeDesiredCut(index)}>
-                    <Trash />
-                  </Button>
+        <div className="lg:flex lg:space-x-4">
+          <Card className="lg:flex-1">
+            <CardHeader>
+              <CardTitle>Cortes Deseados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-2">
+                Nota: La longitud debe ser en milímetros (mm)
+              </p>
+              {desiredCutsFields.map((field, index) => (
+                <div key={field.id} className="flex flex-col space-y-2 mb-4">
+                  <div className="flex space-x-2">
+                    <Input
+                      {...register(`desiredCuts.${index}.length`)}
+                      type="number"
+                      placeholder="Longitud (mm)"
+                      onKeyDown={(e) => handleKeyPress(e, index, 'desiredCuts')}
+                    />
+                    <Input
+                      {...register(`desiredCuts.${index}.quantity`)}
+                      type="number"
+                      placeholder="Cantidad"
+                      onKeyDown={(e) => handleKeyPress(e, index, 'desiredCuts')}
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => removeDesiredCut(index)}>
+                      <Trash />
+                    </Button>
+                  </div>
+                  {errors.desiredCuts?.[index]?.length && (
+                    <p className="text-red-500 text-sm">
+                      {errors.desiredCuts[index]?.length?.message}
+                    </p>
+                  )}
+                  {errors.desiredCuts?.[index]?.quantity && (
+                    <p className="text-red-500 text-sm">
+                      {errors.desiredCuts[index]?.quantity?.message}
+                    </p>
+                  )}
                 </div>
-                {errors.desiredCuts?.[index]?.length && (
-                  <p className="text-red-500 text-sm">
-                    {errors.desiredCuts[index]?.length?.message}
-                  </p>
-                )}
-                {errors.desiredCuts?.[index]?.quantity && (
-                  <p className="text-red-500 text-sm">
-                    {errors.desiredCuts[index]?.quantity?.message}
-                  </p>
-                )}
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() =>
-                appendDesiredCut({ length: '' as any, quantity: '' as any })
-              }
-              className="mt-2">
-              <Plus />
-            </Button>
-          </CardContent>
-        </Card>
+              ))}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() =>
+                  appendDesiredCut({ length: '' as any, quantity: '' as any })
+                }
+                className="mt-2">
+                <Plus />
+              </Button>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Tablas Disponibles</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500 mb-2">
-              Nota: La longitud debe ser en milímetros (mm)
-            </p>
-            {availableWoodFields.map((field, index) => (
-              <div key={field.id} className="flex flex-col space-y-2 mb-4">
-                <div className="flex space-x-2">
-                  <Input
-                    {...register(`availableWood.${index}.length`)}
-                    type="number"
-                    placeholder="Longitud (mm)"
-                    onKeyDown={(e) => handleKeyPress(e, index, 'availableWood')}
-                  />
-                  <Input
-                    {...register(`availableWood.${index}.quantity`)}
-                    type="number"
-                    placeholder="Cantidad"
-                    onKeyDown={(e) => handleKeyPress(e, index, 'availableWood')}
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={() => removeAvailableWood(index)}>
-                    <Trash />
-                  </Button>
+          <Card className="lg:flex-1">
+            <CardHeader>
+              <CardTitle>Tablas Disponibles</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-2">
+                Nota: La longitud debe ser en milímetros (mm)
+              </p>
+              {availableWoodFields.map((field, index) => (
+                <div key={field.id} className="flex flex-col space-y-2 mb-4">
+                  <div className="flex space-x-2">
+                    <Input
+                      {...register(`availableWood.${index}.length`)}
+                      type="number"
+                      placeholder="Longitud (mm)"
+                      onKeyDown={(e) =>
+                        handleKeyPress(e, index, 'availableWood')
+                      }
+                    />
+                    <Input
+                      {...register(`availableWood.${index}.quantity`)}
+                      type="number"
+                      placeholder="Cantidad"
+                      onKeyDown={(e) =>
+                        handleKeyPress(e, index, 'availableWood')
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => removeAvailableWood(index)}>
+                      <Trash />
+                    </Button>
+                  </div>
+                  {errors.availableWood?.[index]?.length && (
+                    <p className="text-red-500 text-sm">
+                      {errors.availableWood[index]?.length?.message}
+                    </p>
+                  )}
+                  {errors.availableWood?.[index]?.quantity && (
+                    <p className="text-red-500 text-sm">
+                      {errors.availableWood[index]?.quantity?.message}
+                    </p>
+                  )}
                 </div>
-                {errors.availableWood?.[index]?.length && (
-                  <p className="text-red-500 text-sm">
-                    {errors.availableWood[index]?.length?.message}
-                  </p>
-                )}
-                {errors.availableWood?.[index]?.quantity && (
-                  <p className="text-red-500 text-sm">
-                    {errors.availableWood[index]?.quantity?.message}
-                  </p>
-                )}
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() =>
-                appendAvailableWood({ length: '' as any, quantity: '' as any })
-              }
-              className="mt-2">
-              <Plus />
-            </Button>
-          </CardContent>
-        </Card>
+              ))}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() =>
+                  appendAvailableWood({
+                    length: '' as any,
+                    quantity: '' as any,
+                  })
+                }
+                className="mt-2">
+                <Plus />
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
         <Card>
           <CardHeader>
@@ -365,12 +388,15 @@ const App: React.FC = () => {
                   <TableHead>Longitud de Tabla</TableHead>
                   <TableHead>Cortes</TableHead>
                   <TableHead>Desperdicio</TableHead>
+                  <TableHead>Detalle</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {result.cuts.map((pattern, index) => (
                   <TableRow key={index}>
-                    <TableCell>{pattern.woodUsed}</TableCell>
+                    <TableCell>
+                      {new Intl.NumberFormat('es-AR').format(pattern.woodUsed)}
+                    </TableCell>
                     <TableCell>
                       {pattern.cuts
                         .reduce((acc, cut) => {
@@ -385,23 +411,50 @@ const App: React.FC = () => {
                           return acc;
                         }, [] as { length: number; quantity: number }[])
                         .map(
-                          ({ length, quantity }) => `${length} (x${quantity})`
+                          ({ length, quantity }) =>
+                            `${new Intl.NumberFormat('es-AR').format(
+                              length
+                            )} (x${quantity})`
                         )
                         .join(', ')}
                     </TableCell>
                     <TableCell>
-                      {pattern.woodUsed -
-                        pattern.cuts.reduce((prev, curr) => prev + curr, 0)}
+                      {new Intl.NumberFormat('es-AR').format(
+                        pattern.remainingLength
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {pattern.reusedLength && pattern.reusedLength > 0 && (
+                        <span>
+                          Reutilizado:{' '}
+                          {new Intl.NumberFormat('es-AR').format(
+                            pattern.reusedLength
+                          )}{' '}
+                          mm
+                        </span>
+                      )}
+
+                      {pattern.isReused
+                        ? `Reutilizado del sobrante de la tabla anterior (Original: ${new Intl.NumberFormat(
+                            'es-AR'
+                          ).format(pattern.originalLength ?? 0)} mm)`
+                        : ''}
                     </TableCell>
                   </TableRow>
                 ))}
                 <TableRow>
                   <TableCell className="font-medium">Total</TableCell>
                   <TableCell className="font-medium">
-                    {result.totalLengthUsed}
+                    {new Intl.NumberFormat('es-AR').format(
+                      result.totalLengthUsed
+                    )}{' '}
+                    mm
                   </TableCell>
                   <TableCell className="font-medium">
-                    {result.totalLengthTrashed}
+                    {new Intl.NumberFormat('es-AR').format(
+                      result.totalLengthTrashed
+                    )}{' '}
+                    mm
                   </TableCell>
                 </TableRow>
               </TableBody>
