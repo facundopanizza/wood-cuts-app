@@ -214,9 +214,25 @@ const App: React.FC = () => {
     ];
 
     const patternsWs = XLSX.utils.aoa_to_sheet(patternsData);
-    XLSX.utils.book_append_sheet(workbook, patternsWs, 'Patrones de Corte');
 
-    XLSX.writeFile(workbook, 'resultados_cortes_madera.xlsx');
+    // Get current date and time in Argentine format
+    const now = new Date();
+    const dateTimeString = now.toLocaleString('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+    });
+
+    // Append date and time to the sheet name
+    XLSX.utils.book_append_sheet(
+      workbook,
+      patternsWs,
+      `Patrones de Corte - ${dateTimeString}`
+    );
+
+    // Use the same date and time for the file name
+    XLSX.writeFile(
+      workbook,
+      `resultados_cortes_madera_${dateTimeString.replace(/[/:]/g, '-')}.xlsx`
+    );
   };
 
   return (
