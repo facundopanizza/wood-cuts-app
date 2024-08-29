@@ -85,6 +85,10 @@ type FormData = {
 };
 
 const App: React.FC = () => {
+  const [isTooltipOpen, setIsTooltipOpen] = React.useState(false);
+  const [wasteTooltip, setWasteTooltip] = React.useState<
+    Record<string, string>
+  >({});
   const {
     register,
     control,
@@ -231,201 +235,210 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">
-        Optimizador de Cortes de Tabla
-      </h1>
+    <TooltipProvider>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-6">
+          Optimizador de Cortes de Tabla
+        </h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="lg:flex lg:space-x-4">
-          <Card className="mb-4 md:mb-0 lg:flex-1">
-            <CardHeader>
-              <CardTitle>Cortes Deseados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-500 mb-2">
-                Nota: La longitud debe ser en milímetros (mm)
-              </p>
-              {desiredCutsFields.map((field, index) => (
-                <div key={field.id} className="flex flex-col space-y-2 mb-4">
-                  <div className="space-y-3 md:space-y-0 md:flex md:space-x-2">
-                    <Input
-                      {...register(`desiredCuts.${index}.length`)}
-                      type="number"
-                      placeholder="Longitud (mm)"
-                      onKeyDown={(e) => handleKeyPress(e, index, 'desiredCuts')}
-                    />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="lg:flex lg:space-x-4">
+            <Card className="mb-4 md:mb-0 lg:flex-1">
+              <CardHeader>
+                <CardTitle>Cortes Deseados</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-500 mb-2">
+                  Nota: La longitud debe ser en milímetros (mm)
+                </p>
+                {desiredCutsFields.map((field, index) => (
+                  <div key={field.id} className="flex flex-col space-y-2 mb-4">
+                    <div className="space-y-3 md:space-y-0 md:flex md:space-x-2">
+                      <Input
+                        {...register(`desiredCuts.${index}.length`)}
+                        type="number"
+                        placeholder="Longitud (mm)"
+                        onKeyDown={(e) =>
+                          handleKeyPress(e, index, 'desiredCuts')
+                        }
+                      />
 
-                    <Input
-                      {...register(`desiredCuts.${index}.quantity`)}
-                      type="number"
-                      placeholder="Cantidad"
-                      onKeyDown={(e) => handleKeyPress(e, index, 'desiredCuts')}
-                    />
+                      <Input
+                        {...register(`desiredCuts.${index}.quantity`)}
+                        type="number"
+                        placeholder="Cantidad"
+                        onKeyDown={(e) =>
+                          handleKeyPress(e, index, 'desiredCuts')
+                        }
+                      />
 
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => removeDesiredCut(index)}>
-                      <Trash />
-                    </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => removeDesiredCut(index)}>
+                        <Trash />
+                      </Button>
+                    </div>
+                    {errors.desiredCuts?.[index]?.length && (
+                      <p className="text-red-500 text-sm">
+                        {errors.desiredCuts[index]?.length?.message}
+                      </p>
+                    )}
+                    {errors.desiredCuts?.[index]?.quantity && (
+                      <p className="text-red-500 text-sm">
+                        {errors.desiredCuts[index]?.quantity?.message}
+                      </p>
+                    )}
                   </div>
-                  {errors.desiredCuts?.[index]?.length && (
-                    <p className="text-red-500 text-sm">
-                      {errors.desiredCuts[index]?.length?.message}
-                    </p>
-                  )}
-                  {errors.desiredCuts?.[index]?.quantity && (
-                    <p className="text-red-500 text-sm">
-                      {errors.desiredCuts[index]?.quantity?.message}
-                    </p>
-                  )}
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() =>
-                  appendDesiredCut({ length: '' as any, quantity: '' as any })
-                }
-                className="mt-2">
-                <Plus />
-              </Button>
-            </CardContent>
-          </Card>
+                ))}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() =>
+                    appendDesiredCut({ length: '' as any, quantity: '' as any })
+                  }
+                  className="mt-2">
+                  <Plus />
+                </Button>
+              </CardContent>
+            </Card>
 
-          {/* <Card className="lg:flex-1">
-            <CardHeader>
-              <CardTitle>Tablas Disponibles</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-500 mb-2">
-                Nota: La longitud debe ser en milímetros (mm)
-              </p>
-              {availableWoodFields.map((field, index) => (
-                <div key={field.id} className="flex flex-col space-y-2 mb-4">
-                  <div className="space-y-3 md:space-y-0 md:flex md:space-x-2">
-                    <Input
-                      {...register(`availableWood.${index}.length`)}
-                      type="number"
-                      placeholder="Longitud (mm)"
-                      onKeyDown={(e) =>
-                        handleKeyPress(e, index, 'availableWood')
-                      }
-                    />
-                    <Input
-                      {...register(`availableWood.${index}.quantity`)}
-                      type="number"
-                      placeholder="Cantidad"
-                      onKeyDown={(e) =>
-                        handleKeyPress(e, index, 'availableWood')
-                      }
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => removeAvailableWood(index)}>
-                      <Trash />
-                    </Button>
+            {/* <Card className="lg:flex-1">
+              <CardHeader>
+                <CardTitle>Tablas Disponibles</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-500 mb-2">
+                  Nota: La longitud debe ser en milímetros (mm)
+                </p>
+                {availableWoodFields.map((field, index) => (
+                  <div key={field.id} className="flex flex-col space-y-2 mb-4">
+                    <div className="space-y-3 md:space-y-0 md:flex md:space-x-2">
+                      <Input
+                        {...register(`availableWood.${index}.length`)}
+                        type="number"
+                        placeholder="Longitud (mm)"
+                        onKeyDown={(e) =>
+                          handleKeyPress(e, index, 'availableWood')
+                        }
+                      />
+                      <Input
+                        {...register(`availableWood.${index}.quantity`)}
+                        type="number"
+                        placeholder="Cantidad"
+                        onKeyDown={(e) =>
+                          handleKeyPress(e, index, 'availableWood')
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => removeAvailableWood(index)}>
+                        <Trash />
+                      </Button>
+                    </div>
+                    {errors.availableWood?.[index]?.length && (
+                      <p className="text-red-500 text-sm">
+                        {errors.availableWood[index]?.length?.message}
+                      </p>
+                    )}
+                    {errors.availableWood?.[index]?.quantity && (
+                      <p className="text-red-500 text-sm">
+                        {errors.availableWood[index]?.quantity?.message}
+                      </p>
+                    )}
                   </div>
-                  {errors.availableWood?.[index]?.length && (
-                    <p className="text-red-500 text-sm">
-                      {errors.availableWood[index]?.length?.message}
-                    </p>
-                  )}
-                  {errors.availableWood?.[index]?.quantity && (
-                    <p className="text-red-500 text-sm">
-                      {errors.availableWood[index]?.quantity?.message}
-                    </p>
-                  )}
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() =>
-                  appendAvailableWood({
-                    length: '' as any,
-                    quantity: '' as any,
-                  })
-                }
-                className="mt-2">
-                <Plus />
-              </Button>
-            </CardContent>
-          </Card> */}
+                ))}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() =>
+                    appendAvailableWood({
+                      length: '' as any,
+                      quantity: '' as any,
+                    })
+                  }
+                  className="mt-2">
+                  <Plus />
+                </Button>
+              </CardContent>
+            </Card> */}
 
-          <Card className="flex-1">
-            <CardHeader>
-              <CardTitle>Configuración Adicional</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="md:grid md:grid-cols-2 md:gap-3">
-                <div>
-                  <label
-                    htmlFor="sawWidth"
-                    className="block text-sm font-medium text-gray-700 mb-1">
-                    Espesor de la Sierra (mm)
-                  </label>
-                  <Input
-                    {...register('sawWidth')}
-                    type="number"
-                    step="0.1"
-                    id="sawWidth"
-                  />
-                  {errors.sawWidth && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.sawWidth.message}
-                    </p>
-                  )}
-                </div>
+            <Card className="flex-1">
+              <CardHeader>
+                <CardTitle>Configuración Adicional</CardTitle>
+              </CardHeader>
 
-                <div>
-                  <label
-                    htmlFor="errorPercentage"
-                    className="block text-sm font-medium text-gray-700 mb-1">
-                    Porcentaje de Error Humano (%)
-                  </label>
-                  <Input
-                    {...register('errorPercentage')}
-                    type="number"
-                    step="0.1"
-                    id="errorPercentage"
-                  />
-                  {errors.errorPercentage && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.errorPercentage.message}
-                    </p>
-                  )}
-                </div>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label
+                      htmlFor="sawWidth"
+                      className="block text-sm font-medium text-gray-700 mb-1">
+                      Espesor de la Sierra (mm)
+                    </label>
+                    <Input
+                      {...register('sawWidth')}
+                      type="number"
+                      step="0.1"
+                      id="sawWidth"
+                    />
+                    {errors.sawWidth && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.sawWidth.message}
+                      </p>
+                    )}
+                  </div>
 
-                <div>
-                  <label
-                    htmlFor="woodLength"
-                    className="block text-sm font-medium text-gray-700 mb-1">
-                    Longitud de la Tabla (mm)
-                  </label>
-                  <Input
-                    {...register('woodLength')}
-                    type="number"
-                    step="0.1"
-                    id="woodLength"
-                  />
-                  {errors.woodLength && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.woodLength.message}
-                    </p>
-                  )}
-                </div>
+                  <div>
+                    <label
+                      htmlFor="errorPercentage"
+                      className="block text-sm font-medium text-gray-700 mb-1">
+                      Porcentaje de Error Humano (%)
+                    </label>
+                    <Input
+                      {...register('errorPercentage')}
+                      type="number"
+                      step="0.1"
+                      id="errorPercentage"
+                    />
+                    {errors.errorPercentage && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.errorPercentage.message}
+                      </p>
+                    )}
+                  </div>
 
-                <div>
-                  <label
-                    htmlFor="wasteThreshold"
-                    className="block text-sm font-medium text-gray-700 mb-1">
-                    Umbral de Desperdicio (%)
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger type="button">
+                  <div>
+                    <label
+                      htmlFor="woodLength"
+                      className="block text-sm font-medium text-gray-700 mb-1">
+                      Longitud de la Tabla (mm)
+                    </label>
+                    <Input
+                      {...register('woodLength')}
+                      type="number"
+                      step="0.1"
+                      id="woodLength"
+                    />
+                    {errors.woodLength && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.woodLength.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="wasteThreshold"
+                      className="block text-sm font-medium text-gray-700 mb-1">
+                      Umbral de Desperdicio (%)
+                      <Tooltip
+                        onOpenChange={() => setIsTooltipOpen(!isTooltipOpen)}
+                        open={isTooltipOpen}>
+                        <TooltipTrigger
+                          onClick={() => setIsTooltipOpen(!isTooltipOpen)}
+                          asChild>
                           <InfoIcon className="inline-block ml-1 h-4 w-4" />
                         </TooltipTrigger>
 
@@ -438,107 +451,123 @@ const App: React.FC = () => {
                           </p>
                         </TooltipContent>
                       </Tooltip>
-                    </TooltipProvider>
-                  </label>
-                  <Input
-                    {...register('wasteThreshold')}
-                    type="number"
-                    step="0.1"
-                    id="wasteThreshold"
-                  />
-                  {errors.wasteThreshold && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.wasteThreshold.message}
-                    </p>
-                  )}
+                    </label>
+                    <Input
+                      {...register('wasteThreshold')}
+                      type="number"
+                      step="0.1"
+                      id="wasteThreshold"
+                    />
+                    {errors.wasteThreshold && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.wasteThreshold.message}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        <Button type="submit">Calcular</Button>
-      </form>
+          <Button type="submit">Calcular</Button>
+        </form>
 
-      {result && (
-        <Card className="mt-8" ref={resultRef}>
-          <CardHeader>
-            <CardTitle>Resultados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Longitud de Tabla</TableHead>
-                  <TableHead>Cortes</TableHead>
-                  <TableHead>Desperdicio</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {result.cuts.map((pattern, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      {new Intl.NumberFormat('es-AR').format(
-                        pattern.originalLength
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {pattern.cuts
-                        .reduce((acc, cut) => {
-                          const existingCut = acc.find(
-                            (item) => item.length === cut
-                          );
-                          if (existingCut) {
-                            existingCut.quantity += 1;
-                          } else {
-                            acc.push({ length: cut, quantity: 1 });
-                          }
-                          return acc;
-                        }, [] as { length: number; quantity: number }[])
-                        .map(
-                          ({ length, quantity }) =>
-                            `${new Intl.NumberFormat('es-AR').format(
-                              length
-                            )} (x${quantity})`
-                        )
-                        .join(', ')}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        style={{
-                          color:
+        {result && (
+          <Card className="mt-8" ref={resultRef}>
+            <CardHeader>
+              <CardTitle>Resultados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Longitud de Tabla</TableHead>
+                    <TableHead>Cortes</TableHead>
+                    <TableHead>Desperdicio</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {result.cuts.map((pattern, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        {new Intl.NumberFormat('es-AR').format(
+                          pattern.originalLength
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {pattern.cuts
+                          .reduce((acc, cut) => {
+                            const existingCut = acc.find(
+                              (item) => item.length === cut
+                            );
+                            if (existingCut) {
+                              existingCut.quantity += 1;
+                            } else {
+                              acc.push({ length: cut, quantity: 1 });
+                            }
+                            return acc;
+                          }, [] as { length: number; quantity: number }[])
+                          .map(
+                            ({ length, quantity }) =>
+                              `${new Intl.NumberFormat('es-AR').format(
+                                length
+                              )} (x${quantity})`
+                          )
+                          .join(', ')}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          style={{
+                            color:
+                              pattern.cuts.reduce(
+                                (acc, cut) => acc - cut,
+                                pattern.originalLength
+                              ) >
+                              (pattern.originalLength * wasteThreshold) / 100
+                                ? 'red'
+                                : 'inherit',
+                          }}>
+                          {new Intl.NumberFormat('es-AR').format(
                             pattern.cuts.reduce(
                               (acc, cut) => acc - cut,
                               pattern.originalLength
-                            ) >
-                            (pattern.originalLength * wasteThreshold) / 100
-                              ? 'red'
-                              : 'inherit',
-                        }}>
-                        {new Intl.NumberFormat('es-AR').format(
-                          pattern.cuts.reduce(
-                            (acc, cut) => acc - cut,
-                            pattern.originalLength
-                          )
-                        )}
+                            )
+                          )}
 
-                        {pattern.waste >
-                          (pattern.originalLength * wasteThreshold) / 100 && (
-                          <>
-                            <span
-                              style={{ marginLeft: '5px', fontSize: '0.8em' }}>
-                              (+
-                              {new Intl.NumberFormat('es-AR').format(
-                                pattern.waste -
-                                  (pattern.originalLength * wasteThreshold) /
-                                    100
-                              )}
-                              )
-                            </span>
+                          {pattern.waste >
+                            (pattern.originalLength * wasteThreshold) / 100 && (
+                            <>
+                              <span
+                                style={{
+                                  marginLeft: '5px',
+                                  fontSize: '0.8em',
+                                }}>
+                                (+
+                                {new Intl.NumberFormat('es-AR').format(
+                                  pattern.waste -
+                                    (pattern.originalLength * wasteThreshold) /
+                                      100
+                                )}
+                                )
+                              </span>
 
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild type="button">
+                              <Tooltip
+                                open={!!wasteTooltip?.[index]}
+                                onOpenChange={() =>
+                                  setWasteTooltip({
+                                    ...wasteTooltip,
+                                    [index]: !wasteTooltip?.[index],
+                                  })
+                                }
+                                delayDuration={300}>
+                                <TooltipTrigger
+                                  onClick={() =>
+                                    setWasteTooltip({
+                                      ...wasteTooltip,
+                                      [index]: !wasteTooltip?.[index],
+                                    })
+                                  }
+                                  asChild>
                                   <InfoIcon className="h-4 w-4 ml-1 inline-block" />
                                 </TooltipTrigger>
                                 <TooltipContent className="max-w-72 bg-white p-2 rounded border border-gray-300 shadow-md">
@@ -547,39 +576,39 @@ const App: React.FC = () => {
                                   </p>
                                 </TooltipContent>
                               </Tooltip>
-                            </TooltipProvider>
-                          </>
-                        )}
-                      </span>
+                            </>
+                          )}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow>
+                    <TableCell className="font-medium">Total</TableCell>
+                    <TableCell className="font-medium">
+                      {result.numberOfWoodPiecesUsed} tabla
+                      {result.numberOfWoodPiecesUsed !== 1 ? 's' : ''} usada
+                      {result.numberOfWoodPiecesUsed !== 1 ? 's' : ''}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {new Intl.NumberFormat('es-AR').format(
+                        result.cuts.reduce(
+                          (acc, pattern) => acc + pattern.waste,
+                          0
+                        )
+                      )}{' '}
+                      mm
                     </TableCell>
                   </TableRow>
-                ))}
-                <TableRow>
-                  <TableCell className="font-medium">Total</TableCell>
-                  <TableCell className="font-medium">
-                    {result.numberOfWoodPiecesUsed} tabla
-                    {result.numberOfWoodPiecesUsed !== 1 ? 's' : ''} usada
-                    {result.numberOfWoodPiecesUsed !== 1 ? 's' : ''}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {new Intl.NumberFormat('es-AR').format(
-                      result.cuts.reduce(
-                        (acc, pattern) => acc + pattern.waste,
-                        0
-                      )
-                    )}{' '}
-                    mm
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-            <Button onClick={exportToExcel} className="mt-4">
-              Exportar a Excel
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+                </TableBody>
+              </Table>
+              <Button onClick={exportToExcel} className="mt-4">
+                Exportar a Excel
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </TooltipProvider>
   );
 };
 
