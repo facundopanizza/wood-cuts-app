@@ -157,7 +157,7 @@ const App: React.FC = () => {
       undefined,
       data.sawWidth,
       data.errorPercentage / 100,
-      3962
+      data.woodLength
     );
     console.log(result, 'findMe');
     setResult(result);
