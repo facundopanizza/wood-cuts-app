@@ -231,7 +231,7 @@ const App: React.FC = () => {
     // Use the same date and time for the file name
     XLSX.writeFile(
       workbook,
-      `resultados_cortes_madera_${dateTimeString.replace(/[/:]/g, '-')}.xlsx`
+      `cortes-${dateTimeString.replace(/[/:]/g, '-')}.xlsx`
     );
   };
 
