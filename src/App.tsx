@@ -42,10 +42,8 @@ const formSchema = yup.object().shape({
     .array()
     .of(woodPieceSchema)
     .min(1, 'Se requiere al menos un corte deseado'),
-  availableWood: yup
-    .array()
-    .of(woodPieceSchema)
-    .min(1, 'Se requiere al menos una pieza de tabla disponible'),
+  availableWood: yup.array().of(woodPieceSchema),
+  // .min(1, 'Se requiere al menos una pieza de tabla disponible'),
   sawWidth: yup
     .number()
     .positive('El espesor de la sierra debe ser un número positivo')
@@ -93,9 +91,9 @@ const App: React.FC = () => {
   });
 
   const {
-    fields: availableWoodFields,
+    // fields: availableWoodFields,
     append: appendAvailableWood,
-    remove: removeAvailableWood,
+    // remove: removeAvailableWood,
   } = useFieldArray({
     control,
     name: 'availableWood',
@@ -131,10 +129,12 @@ const App: React.FC = () => {
   const onSubmit: SubmitHandler<FormData> = (data) => {
     const result = optimizeCuts(
       data.desiredCuts,
-      data.availableWood,
+      undefined,
       data.sawWidth,
-      data.errorPercentage / 100
+      data.errorPercentage / 100,
+      3962
     );
+    console.log(result, 'findMe');
     setResult(result);
 
     // New code to count cuts and log the result
@@ -267,7 +267,7 @@ const App: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card className="lg:flex-1">
+          {/* <Card className="lg:flex-1">
             <CardHeader>
               <CardTitle>Tablas Disponibles</CardTitle>
             </CardHeader>
@@ -326,55 +326,55 @@ const App: React.FC = () => {
                 <Plus />
               </Button>
             </CardContent>
+          </Card> */}
+
+          <Card className="flex-1">
+            <CardHeader>
+              <CardTitle>Configuración Adicional</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 md:space-y-0 md:flex md:space-x-4">
+                <div className="flex-1">
+                  <label
+                    htmlFor="sawWidth"
+                    className="block text-sm font-medium text-gray-700 mb-1">
+                    Espesor de la Sierra (mm)
+                  </label>
+                  <Input
+                    {...register('sawWidth')}
+                    type="number"
+                    step="0.1"
+                    id="sawWidth"
+                  />
+                  {errors.sawWidth && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.sawWidth.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex-1">
+                  <label
+                    htmlFor="errorPercentage"
+                    className="block text-sm font-medium text-gray-700 mb-1">
+                    Porcentaje de Error Humano (%)
+                  </label>
+                  <Input
+                    {...register('errorPercentage')}
+                    type="number"
+                    step="0.1"
+                    id="errorPercentage"
+                  />
+                  {errors.errorPercentage && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.errorPercentage.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Configuración Adicional</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 md:space-y-0 md:flex md:space-x-4">
-              <div className="flex-1">
-                <label
-                  htmlFor="sawWidth"
-                  className="block text-sm font-medium text-gray-700 mb-1">
-                  Espesor de la Sierra (mm)
-                </label>
-                <Input
-                  {...register('sawWidth')}
-                  type="number"
-                  step="0.1"
-                  id="sawWidth"
-                />
-                {errors.sawWidth && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.sawWidth.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex-1">
-                <label
-                  htmlFor="errorPercentage"
-                  className="block text-sm font-medium text-gray-700 mb-1">
-                  Porcentaje de Error Humano (%)
-                </label>
-                <Input
-                  {...register('errorPercentage')}
-                  type="number"
-                  step="0.1"
-                  id="errorPercentage"
-                />
-                {errors.errorPercentage && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.errorPercentage.message}
-                  </p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         <Button type="submit">Calcular</Button>
       </form>
@@ -448,10 +448,9 @@ const App: React.FC = () => {
                 <TableRow>
                   <TableCell className="font-medium">Total</TableCell>
                   <TableCell className="font-medium">
-                    {new Intl.NumberFormat('es-AR').format(
-                      result.totalLengthUsed
-                    )}{' '}
-                    mm
+                    {result.numberOfWoodPiecesUsed} tabla
+                    {result.numberOfWoodPiecesUsed !== 1 ? 's' : ''} usada
+                    {result.numberOfWoodPiecesUsed !== 1 ? 's' : ''}
                   </TableCell>
                   <TableCell className="font-medium">
                     {new Intl.NumberFormat('es-AR').format(

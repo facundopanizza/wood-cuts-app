@@ -21,6 +21,7 @@ export interface Result {
   totalPiecesUnused: number;
   cutEfficiency: number;
   unfulfilledCuts: WoodPiece[];
+  numberOfWoodPiecesUsed: number;
 }
 
 interface ReusablePiece {
@@ -30,9 +31,10 @@ interface ReusablePiece {
 
 export function optimizeCuts(
   desiredCuts: WoodPiece[],
-  availableWood: WoodPiece[],
+  availableWood?: WoodPiece[],
   sawDustWidth: number = 3,
-  errorPercentage: number = 0.01
+  errorPercentage: number = 0.01,
+  defaultWoodLength: number = 3962
 ): Result {
   let totalLengthUsed = 0;
   let totalLengthTrashed = 0;
@@ -40,9 +42,15 @@ export function optimizeCuts(
   const cutsResult: CutResult[] = [];
   const reusablePieces: ReusablePiece[] = [];
 
-  const allWood = availableWood.flatMap((wood) =>
-    Array(wood.quantity).fill(wood.length)
-  );
+  let allWood: number[];
+  if (availableWood && availableWood.length > 0) {
+    allWood = availableWood.flatMap((wood) =>
+      Array(wood.quantity).fill(wood.length)
+    );
+  } else {
+    allWood = [];
+  }
+
   const remainingCuts = desiredCuts.map((cut) => ({ ...cut }));
 
   function solveSingleWood(woodLength: number): CutResult {
@@ -125,7 +133,7 @@ export function optimizeCuts(
   let totalPiecesUsed = 0;
   let totalPiecesUnused = allWood.length;
 
-  while (allWood.length > 0 || reusablePieces.length > 0) {
+  while (remainingCuts.some((cut) => cut.quantity > 0)) {
     if (reusablePieces.length > 0) {
       processPiece(
         reusablePieces.sort((a, b) => a.length - b.length).pop()!,
@@ -135,9 +143,11 @@ export function optimizeCuts(
       totalPiecesUsed++;
       totalPiecesUnused--;
       processPiece(allWood.pop()!);
+    } else {
+      // Use default wood length when no more available wood
+      totalPiecesUsed++;
+      processPiece(defaultWoodLength);
     }
-
-    if (remainingCuts.every((cut) => cut.quantity === 0)) break;
   }
 
   totalLengthUnused += allWood.reduce((sum, wood) => sum + wood, 0);
@@ -160,5 +170,6 @@ export function optimizeCuts(
     totalPiecesUnused,
     cutEfficiency,
     unfulfilledCuts,
+    numberOfWoodPiecesUsed: totalPiecesUsed,
   };
 }
