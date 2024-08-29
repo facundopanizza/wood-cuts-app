@@ -9,6 +9,7 @@ export interface CutResult {
   remainingLength: number;
   originalLength: number;
   isReused: boolean;
+  waste: number;
 }
 
 export interface Result {
@@ -95,6 +96,7 @@ export function optimizeCuts(
       remainingLength: currentLength,
       originalLength: woodLength,
       isReused: false,
+      waste: cuts.reduce((acc, cut) => acc - cut, woodLength),
     };
   }
 

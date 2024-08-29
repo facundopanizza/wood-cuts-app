@@ -507,23 +507,29 @@ const App: React.FC = () => {
                       <span
                         style={{
                           color:
-                            pattern.remainingLength >
+                            pattern.cuts.reduce(
+                              (acc, cut) => acc - cut,
+                              pattern.originalLength
+                            ) >
                             (pattern.originalLength * wasteThreshold) / 100
                               ? 'red'
                               : 'inherit',
                         }}>
                         {new Intl.NumberFormat('es-AR').format(
-                          pattern.remainingLength
+                          pattern.cuts.reduce(
+                            (acc, cut) => acc - cut,
+                            pattern.originalLength
+                          )
                         )}
 
-                        {pattern.remainingLength >
+                        {pattern.waste >
                           (pattern.originalLength * wasteThreshold) / 100 && (
                           <>
                             <span
                               style={{ marginLeft: '5px', fontSize: '0.8em' }}>
                               (+
                               {new Intl.NumberFormat('es-AR').format(
-                                pattern.remainingLength -
+                                pattern.waste -
                                   (pattern.originalLength * wasteThreshold) /
                                     100
                               )}
@@ -558,7 +564,7 @@ const App: React.FC = () => {
                   <TableCell className="font-medium">
                     {new Intl.NumberFormat('es-AR').format(
                       result.cuts.reduce(
-                        (acc, pattern) => acc + pattern.remainingLength,
+                        (acc, pattern) => acc + pattern.waste,
                         0
                       )
                     )}{' '}
