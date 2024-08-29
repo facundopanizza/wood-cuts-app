@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Plus, Trash } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@radix-ui/react-tooltip';
+import { InfoIcon, Plus, Trash } from 'lucide-react';
 import React, { useRef } from 'react';
 import {
   Resolver,
@@ -42,7 +48,7 @@ const formSchema = yup.object().shape({
     .array()
     .of(woodPieceSchema)
     .min(1, 'Se requiere al menos un corte deseado'),
-  availableWood: yup.array().of(woodPieceSchema),
+  // availableWood: yup.array().of(woodPieceSchema),
   // .min(1, 'Se requiere al menos una pieza de tabla disponible'),
   sawWidth: yup
     .number()
@@ -55,13 +61,26 @@ const formSchema = yup.object().shape({
     .max(100, 'El porcentaje de error humano debe ser menor o igual a 100')
     .typeError('El porcentaje de error humano debe ser un número')
     .required('El porcentaje de error humano es requerido'),
+  woodLength: yup
+    .number()
+    .positive('La longitud de la tabla debe ser un número positivo')
+    .typeError('La longitud de la tabla debe ser un número')
+    .required('La longitud de la tabla es requerida'),
+  wasteThreshold: yup
+    .number()
+    .min(0, 'El umbral de desperdicio debe ser mayor o igual a 0')
+    .max(100, 'El umbral de desperdicio debe ser menor o igual a 100')
+    .typeError('El umbral de desperdicio debe ser un número')
+    .required('El umbral de desperdicio es requerido'),
 });
 
 type FormData = {
   desiredCuts: WoodPiece[];
-  availableWood: WoodPiece[];
+  // availableWood: WoodPiece[];
   sawWidth: number;
   errorPercentage: number;
+  woodLength: number;
+  wasteThreshold: number;
 };
 
 const App: React.FC = () => {
@@ -70,16 +89,20 @@ const App: React.FC = () => {
     control,
     handleSubmit,
     trigger,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
       desiredCuts: [{ length: '' as any, quantity: '' as any }],
-      availableWood: [{ length: '' as any, quantity: '' as any }],
+      // availableWood: [{ length: '' as any, quantity: '' as any }],
       sawWidth: 3,
       errorPercentage: 1,
+      woodLength: 3962,
+      wasteThreshold: 5,
     },
     resolver: yupResolver(formSchema) as Resolver<FormData>,
   });
+  const wasteThreshold = watch('wasteThreshold');
 
   const {
     fields: desiredCutsFields,
@@ -90,26 +113,27 @@ const App: React.FC = () => {
     name: 'desiredCuts',
   });
 
-  const {
-    // fields: availableWoodFields,
-    append: appendAvailableWood,
-    // remove: removeAvailableWood,
-  } = useFieldArray({
-    control,
-    name: 'availableWood',
-  });
+  // const {
+  //   // fields: availableWoodFields,
+  //   append: appendAvailableWood,
+  //   // remove: removeAvailableWood,
+  // } = useFieldArray({
+  //   control,
+  //   name: 'availableWood',
+  // });
 
   const [result, setResult] = React.useState<Result | null>(null);
 
   const desiredCutsRef = useRef<HTMLInputElement[]>([]);
-  const availableWoodRef = useRef<HTMLInputElement[]>([]);
+  // const availableWoodRef = useRef<HTMLInputElement[]>([]);
 
   const resultRef = useRef<HTMLDivElement>(null);
 
   const handleKeyPress = async (
     event: React.KeyboardEvent<HTMLInputElement>,
     index: number,
-    fieldArrayName: 'desiredCuts' | 'availableWood'
+    // fieldArrayName: 'desiredCuts' | 'availableWood'
+    fieldArrayName: 'desiredCuts'
   ) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -119,8 +143,8 @@ const App: React.FC = () => {
           appendDesiredCut({ length: '' as any, quantity: '' as any });
           setTimeout(() => desiredCutsRef.current[index + 1]?.focus(), 0);
         } else {
-          appendAvailableWood({ length: '' as any, quantity: '' as any });
-          setTimeout(() => availableWoodRef.current[index + 1]?.focus(), 0);
+          // appendAvailableWood({ length: '' as any, quantity: '' as any });
+          // setTimeout(() => availableWoodRef.current[index + 1]?.focus(), 0);
         }
       }
     }
@@ -160,9 +184,9 @@ const App: React.FC = () => {
 
     // Create a worksheet for the cutting patterns
     const patternsData = [
-      ['Longitud de Tabla', 'Cortes', 'Desperdicio', 'Detalle'],
+      ['Longitud de Tabla', 'Cortes', 'Desperdicio'],
       ...result.cuts.map((pattern) => [
-        new Intl.NumberFormat('es-AR').format(pattern.woodUsed),
+        new Intl.NumberFormat('es-AR').format(pattern.originalLength),
         pattern.cuts
           .reduce((acc, cut) => {
             const existingCut = acc.find((item) => item.length === cut);
@@ -179,15 +203,6 @@ const App: React.FC = () => {
           )
           .join(', '),
         new Intl.NumberFormat('es-AR').format(pattern.remainingLength),
-        pattern.reusedLength && pattern.reusedLength > 0
-          ? `Reutilizado: ${new Intl.NumberFormat('es-AR').format(
-              pattern.reusedLength
-            )} mm`
-          : pattern.isReused
-          ? `Reutilizado del sobrante de la tabla anterior (Original: ${new Intl.NumberFormat(
-              'es-AR'
-            ).format(pattern.originalLength ?? 0)} mm)`
-          : '',
       ]),
       [
         'Total',
@@ -197,6 +212,7 @@ const App: React.FC = () => {
         '',
       ],
     ];
+
     const patternsWs = XLSX.utils.aoa_to_sheet(patternsData);
     XLSX.utils.book_append_sheet(workbook, patternsWs, 'Patrones de Corte');
 
@@ -333,8 +349,8 @@ const App: React.FC = () => {
               <CardTitle>Configuración Adicional</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 md:space-y-0 md:flex md:space-x-4">
-                <div className="flex-1">
+              <div className="md:grid md:grid-cols-2 md:gap-3">
+                <div>
                   <label
                     htmlFor="sawWidth"
                     className="block text-sm font-medium text-gray-700 mb-1">
@@ -353,7 +369,7 @@ const App: React.FC = () => {
                   )}
                 </div>
 
-                <div className="flex-1">
+                <div>
                   <label
                     htmlFor="errorPercentage"
                     className="block text-sm font-medium text-gray-700 mb-1">
@@ -368,6 +384,60 @@ const App: React.FC = () => {
                   {errors.errorPercentage && (
                     <p className="text-red-500 text-sm mt-1">
                       {errors.errorPercentage.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="woodLength"
+                    className="block text-sm font-medium text-gray-700 mb-1">
+                    Longitud de la Tabla (mm)
+                  </label>
+                  <Input
+                    {...register('woodLength')}
+                    type="number"
+                    step="0.1"
+                    id="woodLength"
+                  />
+                  {errors.woodLength && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.woodLength.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="wasteThreshold"
+                    className="block text-sm font-medium text-gray-700 mb-1">
+                    Umbral de Desperdicio (%)
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <InfoIcon className="inline-block ml-1 h-4 w-4" />
+                        </TooltipTrigger>
+
+                        <TooltipContent className="max-w-72 bg-white p-2 rounded border border-gray-300 shadow-md">
+                          <p>
+                            El umbral de desperdicio determina el porcentaje
+                            máximo de material que se puede desperdiciar sin
+                            tener perdidas. Si una tabla supera este umbral, se
+                            la mostrara en rojo.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </label>
+                  <Input
+                    {...register('wasteThreshold')}
+                    type="number"
+                    step="0.1"
+                    id="wasteThreshold"
+                  />
+                  {errors.wasteThreshold && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.wasteThreshold.message}
                     </p>
                   )}
                 </div>
@@ -391,14 +461,15 @@ const App: React.FC = () => {
                   <TableHead>Longitud de Tabla</TableHead>
                   <TableHead>Cortes</TableHead>
                   <TableHead>Desperdicio</TableHead>
-                  <TableHead>Detalle</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {result.cuts.map((pattern, index) => (
                   <TableRow key={index}>
                     <TableCell>
-                      {new Intl.NumberFormat('es-AR').format(pattern.woodUsed)}
+                      {new Intl.NumberFormat('es-AR').format(
+                        pattern.originalLength
+                      )}
                     </TableCell>
                     <TableCell>
                       {pattern.cuts
@@ -422,26 +493,47 @@ const App: React.FC = () => {
                         .join(', ')}
                     </TableCell>
                     <TableCell>
-                      {new Intl.NumberFormat('es-AR').format(
-                        pattern.remainingLength
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {pattern.reusedLength && pattern.reusedLength > 0 && (
-                        <span>
-                          Reutilizado:{' '}
-                          {new Intl.NumberFormat('es-AR').format(
-                            pattern.reusedLength
-                          )}{' '}
-                          mm
-                        </span>
-                      )}
+                      <span
+                        style={{
+                          color:
+                            pattern.remainingLength >
+                            (pattern.originalLength * wasteThreshold) / 100
+                              ? 'red'
+                              : 'inherit',
+                        }}>
+                        {new Intl.NumberFormat('es-AR').format(
+                          pattern.remainingLength
+                        )}
 
-                      {pattern.isReused
-                        ? `Reutilizado del sobrante de la tabla anterior (Original: ${new Intl.NumberFormat(
-                            'es-AR'
-                          ).format(pattern.originalLength ?? 0)} mm)`
-                        : ''}
+                        {pattern.remainingLength >
+                          (pattern.originalLength * wasteThreshold) / 100 && (
+                          <>
+                            <span
+                              style={{ marginLeft: '5px', fontSize: '0.8em' }}>
+                              (+
+                              {new Intl.NumberFormat('es-AR').format(
+                                pattern.remainingLength -
+                                  (pattern.originalLength * wasteThreshold) /
+                                    100
+                              )}
+                              )
+                            </span>
+
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <InfoIcon className="h-4 w-4 ml-1 inline-block" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-72 bg-white p-2 rounded border border-gray-300 shadow-md">
+                                  <p>
+                                    El desperdicio excede el umbral establecido.
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </>
+                        )}
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -454,7 +546,10 @@ const App: React.FC = () => {
                   </TableCell>
                   <TableCell className="font-medium">
                     {new Intl.NumberFormat('es-AR').format(
-                      result.totalLengthTrashed
+                      result.cuts.reduce(
+                        (acc, pattern) => acc + pattern.remainingLength,
+                        0
+                      )
                     )}{' '}
                     mm
                   </TableCell>

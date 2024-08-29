@@ -7,9 +7,8 @@ export interface CutResult {
   woodUsed: number;
   cuts: number[];
   remainingLength: number;
+  originalLength: number;
   isReused: boolean;
-  originalLength?: number;
-  reusedLength?: number;
 }
 
 export interface Result {
@@ -94,19 +93,20 @@ export function optimizeCuts(
       woodUsed: woodLength,
       cuts: cuts,
       remainingLength: currentLength,
+      originalLength: woodLength,
       isReused: false,
     };
   }
 
   function processPiece(wood: number | ReusablePiece, isReused = false) {
     const woodLength = typeof wood === 'number' ? wood : wood.length;
+    const originalLength =
+      typeof wood === 'number' ? wood : wood.originalLength;
     const result = solveSingleWood(woodLength);
 
     if (result.cuts.length > 0) {
       result.isReused = isReused;
-      result.originalLength =
-        typeof wood === 'number' ? wood : wood.originalLength;
-      cutsResult.push(result);
+      result.originalLength = originalLength;
       totalLengthUsed += result.cuts.reduce((a, b) => a + b, 0);
 
       const minRemainingCutLength = Math.min(
@@ -118,15 +118,16 @@ export function optimizeCuts(
       if (result.remainingLength >= minRemainingCutLength + sawDustWidth) {
         reusablePieces.push({
           length: result.remainingLength,
-          originalLength: result.originalLength,
+          originalLength: originalLength,
         });
-        result.reusedLength = result.remainingLength;
-        result.remainingLength = 0;
       } else {
         totalLengthTrashed += result.remainingLength;
       }
+
+      return result;
     } else {
       totalLengthUnused += woodLength;
+      return null;
     }
   }
 
@@ -134,19 +135,37 @@ export function optimizeCuts(
   let totalPiecesUnused = allWood.length;
 
   while (remainingCuts.some((cut) => cut.quantity > 0)) {
+    let currentWood: number | ReusablePiece;
+    let isReused = false;
+
     if (reusablePieces.length > 0) {
-      processPiece(
-        reusablePieces.sort((a, b) => a.length - b.length).pop()!,
-        true
-      );
+      currentWood = reusablePieces.sort((a, b) => a.length - b.length).pop()!;
+      isReused = true;
     } else if (allWood.length > 0) {
+      currentWood = allWood.pop()!;
       totalPiecesUsed++;
       totalPiecesUnused--;
-      processPiece(allWood.pop()!);
     } else {
-      // Use default wood length when no more available wood
+      currentWood = defaultWoodLength;
       totalPiecesUsed++;
-      processPiece(defaultWoodLength);
+    }
+
+    const currentResult = processPiece(currentWood, isReused);
+    if (currentResult) {
+      while (
+        reusablePieces.length > 0 &&
+        remainingCuts.some((cut) => cut.quantity > 0)
+      ) {
+        const reusedPiece = reusablePieces
+          .sort((a, b) => a.length - b.length)
+          .pop()!;
+        const reusedResult = processPiece(reusedPiece, true);
+        if (reusedResult) {
+          currentResult.cuts = currentResult.cuts.concat(reusedResult.cuts);
+          currentResult.remainingLength = reusedResult.remainingLength;
+        }
+      }
+      cutsResult.push(currentResult);
     }
   }
 
