@@ -222,11 +222,7 @@ const App: React.FC = () => {
     });
 
     // Append date and time to the sheet name
-    XLSX.utils.book_append_sheet(
-      workbook,
-      patternsWs,
-      `Patrones de Corte - ${dateTimeString}`
-    );
+    XLSX.utils.book_append_sheet(workbook, patternsWs, `Cortes`);
 
     // Use the same date and time for the file name
     XLSX.writeFile(
