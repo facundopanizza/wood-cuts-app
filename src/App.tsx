@@ -28,6 +28,7 @@ import {
   TableRow,
 } from './components/ui/table';
 import { Result, WoodPiece, optimizeCuts } from './utils/woodCutOptimizer';
+import { DateTime } from 'luxon';
 
 const woodPieceSchema = yup.object().shape({
   length: yup
@@ -215,20 +216,20 @@ const App: React.FC = () => {
 
     const patternsWs = XLSX.utils.aoa_to_sheet(patternsData);
 
-    // Get current date and time in Argentine format
-    const now = new Date();
-    const dateTimeString = now.toLocaleString('es-AR', {
-      timeZone: 'America/Argentina/Buenos_Aires',
-    });
+    // Get current date and time in Argentine format using Luxon
+    const now = DateTime.now().setZone('America/Argentina/Buenos_Aires');
 
-    // Append date and time to the sheet name
-    XLSX.utils.book_append_sheet(workbook, patternsWs, `Cortes`);
+    // Format date as day-month-year-hour-minutes-seconds
+    const formattedDate = now.toFormat('dd/MM/yyyy HH:mm:ss');
 
-    // Use the same date and time for the file name
-    XLSX.writeFile(
-      workbook,
-      `cortes-${dateTimeString.replace(/[/:]/g, '-')}.xlsx`
-    );
+    console.log(formattedDate, 'formattedDate');
+
+    // Create a valid file name
+    const fileName = `Cortes ${formattedDate}.xlsx`;
+
+    XLSX.utils.book_append_sheet(workbook, patternsWs, 'Cortes');
+
+    XLSX.writeFile(workbook, fileName);
   };
 
   return (
