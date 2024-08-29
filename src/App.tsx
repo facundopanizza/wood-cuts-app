@@ -222,8 +222,6 @@ const App: React.FC = () => {
     // Format date as day-month-year-hour-minutes-seconds
     const formattedDate = now.toFormat('dd/MM/yyyy HH:mm:ss');
 
-    console.log(formattedDate, 'formattedDate');
-
     // Create a valid file name
     const fileName = `Cortes ${formattedDate}.xlsx`;
 
@@ -427,7 +425,7 @@ const App: React.FC = () => {
                     Umbral de Desperdicio (%)
                     <TooltipProvider>
                       <Tooltip>
-                        <TooltipTrigger>
+                        <TooltipTrigger type="button">
                           <InfoIcon className="inline-block ml-1 h-4 w-4" />
                         </TooltipTrigger>
 
@@ -534,7 +532,7 @@ const App: React.FC = () => {
 
                             <TooltipProvider>
                               <Tooltip>
-                                <TooltipTrigger asChild>
+                                <TooltipTrigger asChild type="button">
                                   <InfoIcon className="h-4 w-4 ml-1 inline-block" />
                                 </TooltipTrigger>
                                 <TooltipContent className="max-w-72 bg-white p-2 rounded border border-gray-300 shadow-md">
