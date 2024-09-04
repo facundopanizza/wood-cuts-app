@@ -27,7 +27,11 @@ import {
   TableHeader,
   TableRow,
 } from './components/ui/table';
-import { Result, WoodPiece, optimizeCuts } from './utils/woodCutOptimizer';
+import {
+  GroupedResult,
+  WoodPiece,
+  optimizeCuts,
+} from './utils/woodCutOptimizer';
 import { DateTime } from 'luxon';
 
 const woodPieceSchema = yup.object().shape({
@@ -127,7 +131,7 @@ const App: React.FC = () => {
   //   name: 'availableWood',
   // });
 
-  const [result, setResult] = React.useState<Result | null>(null);
+  const [result, setResult] = React.useState<GroupedResult | null>(null);
 
   const desiredCutsRef = useRef<HTMLInputElement[]>([]);
   // const availableWoodRef = useRef<HTMLInputElement[]>([]);
@@ -169,7 +173,7 @@ const App: React.FC = () => {
     // New code to count cuts and log the result
     const cutCounts = result.cuts.reduce((acc, pattern) => {
       pattern.cuts.forEach((cut) => {
-        acc[cut] = (acc[cut] || 0) + 1;
+        acc[cut] = (acc[cut] || 0) + pattern.quantity;
       });
       return acc;
     }, {} as Record<number, number>);
@@ -189,7 +193,13 @@ const App: React.FC = () => {
 
     // Create a worksheet for the cutting patterns
     const patternsData = [
-      ['Longitud de Tabla', 'Cortes', 'Desperdicio'],
+      [
+        'Longitud de Tabla',
+        'Cortes',
+        'Cantidad',
+        'Desperdicio',
+        'Desperdicio Total',
+      ],
       ...result.cuts.map((pattern) => [
         new Intl.NumberFormat('es-AR').format(pattern.originalLength),
         pattern.cuts
@@ -208,13 +218,18 @@ const App: React.FC = () => {
           )
           .join(', '),
         new Intl.NumberFormat('es-AR').format(pattern.remainingLength),
+        pattern.quantity,
       ]),
       [
         'Total',
         new Intl.NumberFormat('es-AR').format(result.totalLengthUsed) + ' mm',
-        new Intl.NumberFormat('es-AR').format(result.totalLengthTrashed) +
-          ' mm',
+        result.cuts.reduce((acc, pattern) => acc + pattern.quantity, 0),
         '',
+        new Intl.NumberFormat('es-AR').format(result.totalLengthTrashed) +
+          ` mm (${(
+            (result.totalLengthTrashed / result.totalLengthUsed) *
+            100
+          ).toFixed(2)}%)`,
       ],
     ];
 
@@ -483,7 +498,9 @@ const App: React.FC = () => {
                   <TableRow>
                     <TableHead>Longitud de Tabla</TableHead>
                     <TableHead>Cortes</TableHead>
+                    <TableHead>Cantidad</TableHead>
                     <TableHead>Desperdicio</TableHead>
+                    <TableHead>Desperdicio Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -515,25 +532,18 @@ const App: React.FC = () => {
                           )
                           .join(', ')}
                       </TableCell>
+                      <TableCell>{pattern.quantity}</TableCell>
                       <TableCell>
                         <span
                           style={{
                             color:
-                              pattern.cuts.reduce(
-                                (acc, cut) => acc - cut,
-                                pattern.originalLength
-                              ) >
+                              pattern.waste >
                               (pattern.originalLength * wasteThreshold) / 100
                                 ? 'red'
                                 : 'inherit',
                           }}>
-                          {new Intl.NumberFormat('es-AR').format(
-                            pattern.cuts.reduce(
-                              (acc, cut) => acc - cut,
-                              pattern.originalLength
-                            )
-                          )}
-
+                          {new Intl.NumberFormat('es-AR').format(pattern.waste)}{' '}
+                          mm por tabla
                           {pattern.waste >
                             (pattern.originalLength * wasteThreshold) / 100 && (
                             <>
@@ -580,23 +590,36 @@ const App: React.FC = () => {
                           )}
                         </span>
                       </TableCell>
+                      <TableCell>
+                        {new Intl.NumberFormat('es-AR').format(
+                          pattern.waste * pattern.quantity
+                        )}{' '}
+                        mm
+                      </TableCell>
                     </TableRow>
                   ))}
                   <TableRow>
                     <TableCell className="font-medium">Total</TableCell>
+                    <TableCell className="font-medium"></TableCell>
                     <TableCell className="font-medium">
                       {result.numberOfWoodPiecesUsed} tabla
                       {result.numberOfWoodPiecesUsed !== 1 ? 's' : ''} usada
                       {result.numberOfWoodPiecesUsed !== 1 ? 's' : ''}
                     </TableCell>
+                    <TableCell></TableCell>
                     <TableCell className="font-medium">
                       {new Intl.NumberFormat('es-AR').format(
-                        result.cuts.reduce(
-                          (acc, pattern) => acc + pattern.waste,
-                          0
-                        )
+                        result.totalLengthTrashed
                       )}{' '}
                       mm
+                      <span className="text-xs font-medium ml-1">
+                        (
+                        {(
+                          (result.totalLengthTrashed / result.totalLengthUsed) *
+                          100
+                        ).toFixed(2)}
+                        %)
+                      </span>
                     </TableCell>
                   </TableRow>
                 </TableBody>

@@ -19,7 +19,6 @@ export interface Result {
   totalLengthUnused: number;
   totalPiecesUsed: number;
   totalPiecesUnused: number;
-  cutEfficiency: number;
   unfulfilledCuts: WoodPiece[];
   numberOfWoodPiecesUsed: number;
 }
@@ -29,15 +28,22 @@ interface ReusablePiece {
   originalLength: number;
 }
 
+export interface GroupedCutResult extends CutResult {
+  quantity: number;
+}
+
+export interface GroupedResult extends Omit<Result, 'cuts'> {
+  cuts: GroupedCutResult[];
+}
+
 export function optimizeCuts(
   desiredCuts: WoodPiece[],
   availableWood?: WoodPiece[],
   sawDustWidth: number = 3,
   errorPercentage: number = 0.01,
   defaultWoodLength: number = 3962
-): Result {
+): GroupedResult {
   let totalLengthUsed = 0;
-  let totalLengthTrashed = 0;
   let totalLengthUnused = 0;
   const cutsResult: CutResult[] = [];
   const reusablePieces: ReusablePiece[] = [];
@@ -122,8 +128,6 @@ export function optimizeCuts(
           length: result.remainingLength,
           originalLength: originalLength,
         });
-      } else {
-        totalLengthTrashed += result.remainingLength;
       }
 
       return result;
@@ -165,6 +169,10 @@ export function optimizeCuts(
         if (reusedResult) {
           currentResult.cuts = currentResult.cuts.concat(reusedResult.cuts);
           currentResult.remainingLength = reusedResult.remainingLength;
+          currentResult.waste = currentResult.cuts.reduce(
+            (acc, cut) => acc - cut,
+            currentResult.originalLength
+          );
         }
       }
       cutsResult.push(currentResult);
@@ -172,24 +180,31 @@ export function optimizeCuts(
   }
 
   totalLengthUnused += allWood.reduce((sum, wood) => sum + wood, 0);
-  totalLengthTrashed += reusablePieces.reduce(
-    (sum, wood) => sum + wood.length,
+
+  const unfulfilledCuts = remainingCuts.filter((cut) => cut.quantity > 0);
+
+  const groupedCuts = cutsResult.reduce((acc, cut) => {
+    const key = JSON.stringify(cut.cuts.sort((a, b) => a - b));
+    if (!acc[key]) {
+      acc[key] = { ...cut, quantity: 1 };
+    } else {
+      acc[key].quantity += 1;
+    }
+    return acc;
+  }, {} as Record<string, GroupedCutResult>);
+
+  const totalLengthTrashed = Object.values(groupedCuts).reduce(
+    (acc, cut) => acc + cut.waste * cut.quantity,
     0
   );
 
-  const cutEfficiency =
-    totalLengthUsed /
-    (totalLengthUsed + totalLengthTrashed + totalLengthUnused);
-  const unfulfilledCuts = remainingCuts.filter((cut) => cut.quantity > 0);
-
   return {
-    cuts: cutsResult,
+    cuts: Object.values(groupedCuts),
     totalLengthUsed,
     totalLengthTrashed,
     totalLengthUnused,
     totalPiecesUsed,
     totalPiecesUnused,
-    cutEfficiency,
     unfulfilledCuts,
     numberOfWoodPiecesUsed: totalPiecesUsed,
   };
